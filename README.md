@@ -1,3 +1,15 @@
+ **AutoSecure: Vehicular Health Monitoring System with Blockchain Integration**
+**Project Overview**
+AutoSecure is a cutting-edge vehicular health monitoring system leveraging blockchain technology to ensure data integrity and provide tamper-proof records. This system is designed for various stakeholders, including government regulatory bodies, automotive companies, and vehicle owners, ensuring that vehicle health data is secure, reliable, and easily accessible.
+
+**Install Dependencies**
+sudo apt-get update
+sudo apt-get install -y nodejs npm docker.io
+ After that Go to test-network and use command : ./network.sh
+ cd to vehicular-health-api and use command: node server.js
+ go to next terminal cd to test-network/iot-simulation
+ and run command: node send_data.js which will start the simulated iot car sensors and send data to server.
+
 [//]: # (SPDX-License-Identifier: CC-BY-4.0)
 
 # Hyperledger Fabric Samples
