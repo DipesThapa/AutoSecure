@@ -1,0 +1,64 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Gateway, Wallets } = require('fabric-network');
+const crypto = require('crypto');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.json());
+
+async function main() {
+    const ccpPath = path.resolve(__dirname, '..', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+    const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
+
+    const walletPath = path.join(process.cwd(), 'wallet');
+    const wallet = await Wallets.newFileSystemWallet(walletPath);
+
+    const gateway = new Gateway();
+    await gateway.connect(ccp, { wallet, identity: 'appUser', discovery: { enabled: true, asLocalhost: true } });
+
+    const network = await gateway.getNetwork('mychannel');
+    const contract = network.getContract('vehicle-health');
+
+    app.post('/addRecord', async (req, res) => {
+        const { vehicleID, data } = req.body;
+
+        // Validate data
+        if (!vehicleID || !data) {
+            return res.status(400).send('Invalid data format');
+        }
+
+        // Generate a hash of the data
+        const dataHash = crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
+
+        try {
+            await contract.submitTransaction('AddRecord', vehicleID, dataHash);
+            res.send('Record added successfully');
+        } catch (error) {
+            console.error(`Failed to add record: ${error}`);
+            res.status(500).send(`Failed to add record: ${error}`);
+        }
+    });
+
+    app.get('/getRecords/:vehicleID', async (req, res) => {
+        const vehicleID = req.params.vehicleID;
+        try {
+            const result = await contract.evaluateTransaction('GetRecords', vehicleID);
+            const records = JSON.parse(result.toString());
+            res.json(records);
+        } catch (error) {
+            console.error(`Failed to retrieve records: ${error}`);
+            res.status(500).send(`Failed to retrieve records: ${error}`);
+        }
+    });
+
+    app.listen(port, () => {
+        console.log(`API server listening at http://localhost:${port}`);
+    });
+}
+
+main().catch(console.error);
+
